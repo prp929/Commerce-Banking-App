@@ -1,0 +1,172 @@
+/**
+
+Children as function template:
+  {(name) => <div>`hello from ${name}`</div>}
+
+ * Styling:
+ * -could add form-control to className of divs holding Fields
+ * 
+ * Formik Purpose:
+  * 1. Manage state 
+  *     -Formik automatcially creates an object {key:value} where the keys are your field name="key"
+  * 2. Handle Submissions 
+  *     -OnSubmit assignment
+  * 3. Validation/error messages
+  *     -Inegrate Yup's validation schema
+  * 
+ * htmlFor="" ties the label to the input field; 
+ * input requires onChange, onBlur, name, and value properties be defined
+ * <Formik /> contains input property definitions
+ * <Form/> ties elements to a single onSubmit={value}
+ * <Field/> replaces <input/> 
+ *    -by default, a text input; use as='value' prop to change input type to value for that input
+ * 
+ * Address Field below demonstrates an alternate way to render an input element; this element 
+ *  is NOT hooked into state by default; look at its destructuring below to see what props is and how to connect
+ *  {...field} (spread field) and hook into Formik's default onBlur, onSubmit, onChange, values etc
+ *  use meta prop to handle conditional error display 
+ * 
+ * Error Message Handling:
+    - You need component='p' or similar in <Error/> else a text node is injected and any click will trigger     
+      onBlur
+    -You can also create a component <TextError /> (or similarly named component) which receives props, 
+      import it, and use component={MyCustomError}; 
+    -within TextError, <>{props.children}</> displays default 
+      message
+    -Alternate: in form custom error handling
+      <ErrorMessage name='value'> { (errorMsg)=> <> {errorMsg} + other stuff </> } </ErrorMessage>
+    -Alternate: Error message list (as in in28Minutes demo)
+    
+Validation is run by formik 
+  1: after any onBlur event, ie click on field then outside of field 
+  2: after any change in field
+  3: after onSubmit call; ie, cannot submit any form with unmet requirements
+How to stop this defaukt behavior? 
+  validateOnChange={false} //tells formik not to run validation after change event
+  valdidateOnBlur={false} //both are true by default
+For static objects and arrays, ie of fixed length:
+Nested Objcts:
+ objName{
+  n1:'',
+  n2:''
+ }
+ Array Objects;
+  arName:['pos0', 'pos1']
+ 
+ Reference in form name prop with name='objName.n1' and name='arName[0]' respectively
+ MUST EXIST IN VALIDATION SCHEMA AND IN INITIAL VALUES for default reset to take place
+
+ The term function as children refers to this pattern  
+        <ParentDiv>  { (props)=>{ return (  <> {props.value} + stuff </> )} }     </ParentDiv> 
+
+To access a complex object, look at its structure in browser; for example, the props objects
+Let objectWiithThoseProperties be the complex object; it must be passed as in (obj) => {//see below}
+Then, use destructuring: const {methodName, methodName2, propName, propName2} = objectWiithThoseProperties
+ 
+ <FastField/> is optimized for very large forms and only rerenders under certain conditions; not often used 
+
+------------------------------------------
+Say you want to have total access to all formik props inside the form; how do you do that?
+<Formik //all its props>
+  {
+    formik => return ( //all the code that makes up your form)
+  }
+</Formik>
+With the above pattern, you can access formik to manually control field attributes like validation
+Form props and field props look identical; use as appropriate
+
+Disabling submit
+1. isValid prop- read only, true when errors{} is empty; use to disable submit; is not called until 
+    after a form change --> disabled={!props.isValid}  in submit <button/>
+2. validateOnMount // technically ={true}; this prop manually validates page upon loading; add this to <Formik/>
+
+3. dirty props value tells you if any form values have been CHANGED; fails if your form has default
+  values prefilled and don't change at least one of them; add disabled={ !(props.dirty && props.isValid) } 
+
+4. While in the process of submitting; isSubmitting is a bool; however it is not reset to true by 
+  default after submission. Add-->  || props.isSubmitting to the disabled prop above. You must use the second parm of onSubmit, onSubmitProps, and call onSubmitProps.setSubmitting(false) in the .then() block of your api call
+
+--------------------------------------------
+Loading saved data
+1. initialValues must exactly match the JSON literal; create a second object with desired values VIA api call
+2. add enableReinitialize={true} to <Formik/>
+3. Add state variable and method set = to null
+4. in initialValues of <Formik/>, use initialValues={initialValues || stateValues} 
+5. add the event that triggers the setState method; either in API call block or a button
+
+
+npm install react-multi-date-picker
+Moment library can be used for validating dates
+
+/*******************************************************************************/
+Below is a default form with no Formik 
+
+<div className='container bg bg-light p-3 rounded'>
+<form action="">
+
+<label htmlFor="name">Name</label>
+<input type="text" id='name' name='name' />
+
+<label htmlFor="email">Email</label>
+<input type="text" id='email' name='email' />
+
+<label htmlFor="channel">Channel</label>
+<input type="text" id='channel' name='channel' />
+
+</form>
+</div> */
+
+/**************************************************************************************/
+
+HOW TO USE:
+
+1. Create a formik wrapper; this wrapper contains 
+  -a standard formik container with onSubmit, initialValues, and validationSchema
+  -inside of that, a form container
+  -inside of that, formik controller instances along with an onSubmit or other global buttons
+
+2. Create a formik controller; this is a switch statement
+   with props--> control='' type='' label='' name=''
+   where control is our custom prop to determine the selected component type 
+   (string corresponding to the switch selectors)
+
+3. The individual components rendered by the controller; input, textarea, radio, etc. 
+
+4. You need Yup & Formik installed; add Bootstrap cdn to index.js
+
+
+MAP MUST RETURN ONE ELEMENT APPARENTLY
+
+setFieldValue and all other props associated with Formik must be explicitly passed;
+see dateList in formikwrapper; pass user defined props explicitly like name, options, 
+etc. but then also pass props; Here, I used props={extraProps} so setFieldValue and
+all other helper methods would be available in dateList
+
+The key to not losing focus on every state change in an input onChange event (in datelist component) is
+to give it a unique key value (that is, as the component prop)
+
+I added checked prop and state to radio component to get 2 options to toggle properly;
+I have no idea why adding checked={val[-1]} does anything but it works now and breaks without it 
+
+
+
+
+    function buildDateStr(dates){
+      let ar= dates;
+      let dS = [];
+      for(let i = 0; i<ar.length; i++){
+        let list=ar[i];
+        let s = '';
+        for(let j=0; j<list.length; j++){
+          let date = new Date(list[j]);
+          let day = date.getDate();
+          let month = date.getMonth();
+          let year= date.getFullYear();
+          s += `${month+1}/${day}/${year}, `
+          //console.log('s is: ', s);
+        }
+        dS.push(s.substring(0, s.length-2));
+      }
+      return dS;
+      //console.log('build() -> ', dS)
+    }
